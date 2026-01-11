@@ -63,7 +63,13 @@ Authorization: Bearer <JWT>
   "latitude": 38.6270,
   "longitude": -90.1994
 }
+GET /api/incidents/42
+Authorization: Bearer <JWT>
+```
+This returns the full incident record, including status, location, and associated comments.
 
+## System Architecture
+```
 React Frontend
        ↓
 Flask REST API  →  PostgreSQL
