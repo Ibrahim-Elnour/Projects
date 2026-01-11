@@ -72,7 +72,7 @@ Flask REST API  →  PostgreSQL
 
 GET /api/incidents/42
 Authorization: Bearer <JWT>
-```s
+```
 
 Why I Built This
 I wanted to build a production-style system that mirrors how platforms like Nextdoor, airlines, and operations teams manage real-time, stateful data across users, APIs, and dashboards.
