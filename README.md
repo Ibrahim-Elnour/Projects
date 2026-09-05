@@ -51,7 +51,7 @@ GET /api/neighborhoods/:neighborhoodId/analytics
 
 ## Example Request
 
-```http
+```
 curl -X POST http://127.0.0.1:5001/api/reports \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <JWT>" \
