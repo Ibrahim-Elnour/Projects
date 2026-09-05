@@ -31,23 +31,20 @@ Built to explore how modern platforms handle user-generated reports, location-ba
 ### Authentication
 POST /api/auth/register
 POST /api/auth/login
-GET /api/auth/me
+POST /api/auth/logout
+GET  /api/auth/me
 
 ### Incidents
-POST /api/incidents
-GET /api/incidents
-GET /api/incidents/{id}
-PATCH /api/incidents/{id}
-PATCH /api/incidents/{id}/status
-DELETE /api/incidents/{id}
+GET   /api/neighborhoods/:neighborhoodId/reports
+POST  /api/reports
+PATCH /api/reports/:reportId
 
 ### Comments
-POST /api/incidents/{id}/comments
-GET /api/incidents/{id}/comments
+GET  /api/neighborhoods/:neighborhoodId/chat
+POST /api/neighborhoods/:neighborhoodId/chatc
 
 ### Analytics
-GET /api/analytics/top-categories
-GET /api/analytics/average-resolution-time
+GET /api/neighborhoods/:neighborhoodId/analytics
 
 
 ---
@@ -55,32 +52,39 @@ GET /api/analytics/average-resolution-time
 ## Example Request
 
 ```http
-POST /api/incidents
-Content-Type: application/json
-Authorization: Bearer <JWT>
-
-{
-  "title": "Power outage on Main St",
-  "description": "Multiple houses lost power after a transformer failure",
-  "severity": "high",
-  "latitude": 38.6270,
-  "longitude": -90.1994
-}
-GET /api/incidents/42
-Authorization: Bearer <JWT>
+curl -X POST http://127.0.0.1:5001/api/reports \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <JWT>" \
+  -d '{
+    "neighborhoodId": 1,
+    "title": "Book bag theft",
+    "category": "Theft",
+    "status": "New",
+    "severity": "Watch",
+    "location": "N High St & E 14th Ave",
+    "lat": 39.9981,
+    "lng": -83.0085,
+    "details": "Book bag was stolen near 14th St."
+  }'
 ```
 This returns the full incident record, including status, location, and associated comments.
 
 ## System Architecture
 ```
 React Frontend
-       ↓
-Flask REST API  →  PostgreSQL
-       ↓
-    JWT Authentication
+- Renders the dashboard, map, reports, neighborhood join flow, and chat
+- Sends JSON requests to the API
+- Displays incidents from the database as map pins and report cards
 
-GET /api/incidents/42
-Authorization: Bearer <JWT>
+Flask REST API
+- Exposes endpoints for neighborhoods, reports, chat, and membership
+- Validates incoming request data
+- Creates and updates incident reports
+- Returns JSON responses to the frontend
+
+PostgreSQL
+- Stores users, neighborhoods, reports, comments, chat messages, and memberships
+- Keeps incident location data as latitude/longitude for map display
 ```
 
 Why I Built This
