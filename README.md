@@ -1,3 +1,6 @@
+<img width="1470" height="807" alt="Screenshot 2026-09-04 at 9 41 32 PM" src="https://github.com/user-attachments/assets/6e3e90d4-b834-45a7-acbd-a684de204bdc" />
+
+
 # Neighborhood Incident Reporting Platform
 
 A full-stack web application that allows users to create, update, and track real-time neighborhood infrastructure and safety incidents.
@@ -82,3 +85,7 @@ Authorization: Bearer <JWT>
 
 Why I Built This
 I wanted to build a production-style system that mirrors how platforms like Nextdoor, airlines, and operations teams manage real-time, stateful data across users, APIs, and dashboards.
+
+<img width="1469" height="808" alt="Screenshot 2026-09-04 at 9 41 41 PM" src="https://github.com/user-attachments/assets/38c62d7f-707a-4283-9968-82a0726b3f21" />
+
+
