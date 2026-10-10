@@ -1,4 +1,3 @@
-
 # Projects
 
 Software engineering and machine learning projects by **Ibrahim Elnour**, Computer Science @ The Ohio State University.
@@ -11,18 +10,18 @@ Fine-tuned a pretrained YOLOv8 object detection model to locate and classify bra
 
 **Stack:** Python, PyTorch, Ultralytics YOLOv8
 
-<img width="1920" height="1920" alt="val_batch0_pred" src="https://github.com/user-attachments/assets/cb411b8f-3b64-41eb-9a81-2102d08c600b" />
+<img width="100%" alt="Brain tumor predictions" src="https://github.com/user-attachments/assets/e3e5154f-2954-44c4-a8fe-005c4d008ba6" />
 
 **[View project →](https://github.com/ibrahim-elnour/projects/tree/main/brain-tumor-detection)**
 
 ---
 
-## Neighborhood Incident Reporting Platform
+## Vigil — Campus Safety Platform
 
-A full-stack web application for creating, updating, and tracking real-time neighborhood infrastructure and safety incidents, with location-based feeds, status workflows, and analytics.
+A full-stack web app where Ohio State students report thefts, robberies, and safety issues on an interactive campus map. Secured with authentication and PostgreSQL Row Level Security, and deployed live on Vercel.
 
-**Stack:** Flask, PostgreSQL, React, REST APIs, JWT
+**Stack:** React, Vite, Supabase, PostgreSQL, Vercel
 
-<img width="1470" height="807" alt="Neighborhood Incident Reporting dashboard" src="https://github.com/user-attachments/assets/6e3e90d4-b834-45a7-acbd-a684de204bdc" />
+<img width="100%" alt="Vigil campus safety map" src="https://github.com/user-attachments/assets/f00a91ab-ded4-49c5-96b7-dbcb8baf04dc" />
 
-**[View project →](https://github.com/ibrahim-elnour/projects/tree/main/neighborhood-incident-platform)**
+**[Live app →](https://vigil-osu.vercel.app)** · **[View project →](https://github.com/ibrahim-elnour/projects/tree/main/vigil)**
