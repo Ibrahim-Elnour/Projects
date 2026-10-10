@@ -1,0 +1,93 @@
+const hoursAgo = (hours) => new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
+
+export const seedReports = [
+  {
+    id: 'r-101',
+    title: 'Bike taken from rack',
+    category: 'Theft',
+    location: 'Thompson Library, south entrance',
+    description: 'A locked commuter bike was taken from the rack outside the south entrance. Reported to campus security; please use the racks inside the west doors for now.',
+    lat: 40.00072,
+    lng: -83.01456,
+    status: 'open',
+    createdAt: hoursAgo(0.35),
+  },
+  {
+    id: 'r-102',
+    title: 'Phone snatched near bus stop',
+    category: 'Theft',
+    location: 'High Street & 15th Avenue',
+    description: 'A phone was taken near the southbound stop around dusk. No injuries reported. Stay aware while waiting near the curb.',
+    lat: 39.99782,
+    lng: -83.00883,
+    status: 'open',
+    createdAt: hoursAgo(1.8),
+  },
+  {
+    id: 'r-103',
+    title: 'Suspicious activity reported',
+    category: 'Safety',
+    location: 'Ohio Union, east patio',
+    description: 'Several people reported someone checking door handles near the east patio. Building staff have been notified and are monitoring the area.',
+    lat: 39.99748,
+    lng: -83.00763,
+    status: 'open',
+    createdAt: hoursAgo(3.2),
+  },
+  {
+    id: 'r-104',
+    title: 'Attempted bike theft',
+    category: 'Theft',
+    location: 'Dreese Laboratories, west side',
+    description: 'A lock was cut but the bike was left behind. The owner has filed a report. Consider using a U-lock and registering bikes with the university.',
+    lat: 40.00232,
+    lng: -83.01717,
+    status: 'open',
+    createdAt: hoursAgo(5.5),
+  },
+  {
+    id: 'r-105',
+    title: 'Robbery reported near campus edge',
+    category: 'Robbery',
+    location: 'North High Street & West 11th Avenue',
+    description: 'A robbery was reported near the intersection. The person involved is safe and has contacted police. Take a well-lit route and travel with someone if possible.',
+    lat: 40.00421,
+    lng: -83.01022,
+    status: 'open',
+    createdAt: hoursAgo(8),
+  },
+  {
+    id: 'r-106',
+    title: 'Wallet found and turned in',
+    category: 'Other',
+    location: 'Thompson Library, east desk',
+    description: 'A wallet was found in the first-floor reading area and handed to the library service desk.',
+    lat: 40.00095,
+    lng: -83.0134,
+    status: 'resolved',
+    createdAt: hoursAgo(29),
+  },
+  {
+    id: 'r-107',
+    title: 'Unlit path by the Oval',
+    category: 'Safety',
+    location: 'Oval, southeast path',
+    description: 'A stretch of path lighting was out. Facilities have replaced the bulbs and the path is lit again.',
+    lat: 39.99825,
+    lng: -83.01312,
+    status: 'resolved',
+    createdAt: hoursAgo(54),
+  },
+];
+
+export const seedMessages = [
+  { id: 'm-1', author: 'Maya R.', text: 'Anyone know if the west Thompson entrance is open?', time: '8:41 PM', mine: false },
+  { id: 'm-2', author: 'Jordan K.', text: 'It was open when I passed a few minutes ago.', time: '8:43 PM', mine: false },
+  { id: 'm-3', author: 'Avery L.', text: 'Thanks, just got through. The inside racks are busy tonight.', time: '8:45 PM', mine: false },
+];
+
+export const seedNotifications = [
+  { id: 'n-1', title: 'New theft report', detail: 'Bike taken from rack · Thompson Library', time: '21 min ago', read: false },
+  { id: 'n-2', title: 'Safety update', detail: 'Path lighting restored · The Oval', time: '1 day ago', read: false },
+  { id: 'n-3', title: 'Report resolved', detail: 'Wallet found and turned in · Thompson Library', time: '1 day ago', read: true },
+];
