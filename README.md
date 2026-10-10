@@ -25,4 +25,4 @@ A full-stack web application for creating, updating, and tracking real-time neig
 
 <img width="1470" height="807" alt="Neighborhood Incident Reporting dashboard" src="https://github.com/user-attachments/assets/6e3e90d4-b834-45a7-acbd-a684de204bdc" />
 
-**[View project →](https://github.com/ibrahim-elnour/projects/tree/main/neighborhood-incident-reporting)**
+**[View project →](https://github.com/ibrahim-elnour/projects/tree/main/neighborhood-incident-platform)**
