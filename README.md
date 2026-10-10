@@ -1,3 +1,4 @@
+
 # Projects
 
 Software engineering and machine learning projects by **Ibrahim Elnour**, Computer Science @ The Ohio State University.
@@ -10,7 +11,7 @@ Fine-tuned a pretrained YOLOv8 object detection model to locate and classify bra
 
 **Stack:** Python, PyTorch, Ultralytics YOLOv8
 
-![Brain tumor predictions](brain-tumor-detection/val_batch0_pred.jpg)
+<img width="1920" height="1920" alt="val_batch0_pred" src="https://github.com/user-attachments/assets/cb411b8f-3b64-41eb-9a81-2102d08c600b" />
 
 **[View project →](brain-tumor-detection)**
 
