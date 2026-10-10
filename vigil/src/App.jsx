@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CircleAlert, Crosshair, MapPin, MessageCircle, Navigation, Plus, Send, Shield, X, Bell, CheckCheck, ChevronRight } from 'lucide-react';
+import { CircleAlert, Crosshair, MapPin, MessageCircle, Navigation, Plus, Send, Shield, X, Bell, CheckCheck, ChevronRight, LogOut } from 'lucide-react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { api } from './api.js';
+import { supabase } from './supabase.js';
 
 const CAMPUS_CENTER = [40.00015, -83.01435];
 const CATEGORIES = ['Theft', 'Robbery', 'Safety', 'Other'];
@@ -52,18 +53,53 @@ function MarkerIcon({ position, icon, onSelect }) {
   return null;
 }
 
-function ReportCard({ report, selected, onSelect }) {
+function ReportCard({ report, selected, onSelect, canResolve, onResolve }) {
   return (
-    <button className={`report-card${selected ? ' selected' : ''}`} type="button" onClick={() => onSelect(report.id)}>
-      <span className="report-card-top">
-        <span className="report-category">{report.category}</span>
-        <span className="report-time">{relativeTime(report.createdAt)}</span>
-      </span>
-      <span className="report-title">{report.title}</span>
-      <span className="report-location"><MapPin size={13} />{report.location}</span>
-      {selected && <span className="report-description">{report.description}</span>}
-      {report.status === 'resolved' && <span className="resolved-label">Resolved</span>}
-    </button>
+    <article className={`report-card${selected ? ' selected' : ''}`}>
+      <button className="report-card-select" type="button" aria-pressed={selected} onClick={() => onSelect(report.id)}>
+        <span className="report-card-top">
+          <span className="report-category">{report.category}</span>
+          <span className="report-time">{relativeTime(report.createdAt)}</span>
+        </span>
+        <span className="report-title">{report.title}</span>
+        <span className="report-location"><MapPin size={13} />{report.location}</span>
+        {selected && <span className="report-description">{report.description}</span>}
+        {report.status === 'resolved' && <span className="resolved-label">Resolved</span>}
+      </button>
+      {canResolve && report.status === 'open' && <button className="resolve-button" type="button" onClick={(event) => { event.stopPropagation(); onResolve(report.id); }}>Mark resolved</button>}
+    </article>
+  );
+}
+
+function AuthScreen({ mode, setMode, configured, loading, error, notice, onSubmit }) {
+  const signingUp = mode === 'signup';
+  return (
+    <div className="app-shell">
+      <header className="topbar">
+        <a className="brand" href="#home" aria-label="Vigil home"><span className="brand-mark"><Shield size={20} strokeWidth={1.8} /></span><span>vigil</span><span className="brand-divider" /><span className="brand-campus">OHIO STATE</span></a>
+        <span className="campus-status"><span className="live-dot" />COLUMBUS, OHIO</span>
+      </header>
+      <main className="auth-main">
+        <section className="auth-panel" aria-labelledby="auth-heading">
+          <p className="eyebrow">THE OHIO STATE UNIVERSITY <span>·</span> CAMPUS SAFETY</p>
+          <h1 id="auth-heading">{signingUp ? 'Join your campus.' : 'Good to see you.'}</h1>
+          <p className="auth-intro">{signingUp ? 'Create an account to share reports and stay aware together.' : 'Log in to see what’s happening around campus.'}</p>
+          {!configured && <p className="auth-setup" role="status">Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to your environment to connect Vigil.</p>}
+          {notice && <p className="auth-notice" role="status">{notice}</p>}
+          <form className="auth-form" onSubmit={onSubmit}>
+            <label className="field-label" htmlFor="auth-email">Email</label>
+            <input id="auth-email" name="email" type="email" autoComplete="email" required placeholder="you@osu.edu" />
+            <label className="field-label" htmlFor="auth-password">Password</label>
+            <input id="auth-password" name="password" type="password" autoComplete={signingUp ? 'new-password' : 'current-password'} minLength={6} required placeholder="At least 6 characters" />
+            {error && <p className="form-error" role="alert">{error}</p>}
+            <button className="primary-button auth-submit" type="submit" disabled={!configured || loading}>{loading ? 'Please wait…' : signingUp ? 'Create account' : 'Log in'}<ChevronRight size={16} /></button>
+          </form>
+          <div className="auth-switch">{signingUp ? 'Already have an account?' : 'New to Vigil?'} <button type="button" onClick={() => setMode(signingUp ? 'login' : 'signup')}>{signingUp ? 'Log in' : 'Create an account'}</button></div>
+          <p className="auth-emergency"><CircleAlert size={14} />For emergencies, call <strong>911</strong>.</p>
+        </section>
+      </main>
+      <footer className="site-footer"><span>VIGIL <span className="footer-separator">/</span> OHIO STATE</span><span>Look out for one another.</span></footer>
+    </div>
   );
 }
 
@@ -171,6 +207,12 @@ function CommunityPanel({ mode, onClose, onModeChange, messages, setMessages, no
 }
 
 export default function App() {
+  const [session, setSession] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authNotice, setAuthNotice] = useState('');
   const [reports, setReports] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [view, setView] = useState('open');
@@ -186,15 +228,54 @@ export default function App() {
   const [dataError, setDataError] = useState('');
 
   useEffect(() => {
+    if (!supabase) {
+      setAuthReady(true);
+      return undefined;
+    }
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setSession(data.session);
+      setAuthReady(true);
+    }).catch(() => {
+      if (!mounted) return;
+      setAuthReady(true);
+      setAuthError('Could not connect to Supabase. Check your project URL and try again.');
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setAuthReady(true);
+      setAuthError('');
+      setAuthNotice('');
+    });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setReports([]);
+      setMessages([]);
+      setNotifications([]);
+      setDataError('');
+      return undefined;
+    }
+    let mounted = true;
     Promise.all([api.getReports(), api.getMessages(), api.getNotifications()])
       .then(([nextReports, nextMessages, nextNotifications]) => {
+        if (!mounted) return;
         setReports(nextReports);
         setMessages(nextMessages);
         setNotifications(nextNotifications);
         setSelectedId(nextReports.find((report) => report.status === 'open')?.id ?? null);
       })
-      .catch(() => setDataError('Could not load campus reports. Check your connection and try again.'));
-  }, []);
+      .catch(() => {
+        if (mounted) setDataError('Could not load campus reports. Check your connection and try again.');
+      });
+    return () => { mounted = false; };
+  }, [session?.user?.id]);
 
   const visibleReports = useMemo(() => reports
     .filter((report) => report.status === view)
@@ -231,6 +312,50 @@ export default function App() {
     setIsReportOpen(true);
   }
 
+  async function submitAuth(event) {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError('');
+    setAuthNotice('');
+    const form = new FormData(event.currentTarget);
+    const email = form.get('email')?.toString().trim();
+    const password = form.get('password')?.toString();
+    try {
+      if (!supabase) throw new Error('Supabase is not configured.');
+      if (authMode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        if (!data.session) setAuthNotice('Check your email to confirm your account, then log in.');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (error) {
+      setAuthError(error.message || 'Authentication failed. Please try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function logOut() {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch {
+      setDataError('Could not log out. Please try again.');
+    }
+  }
+
+  async function resolveReport(reportId) {
+    try {
+      const resolved = await api.resolveReport(reportId, session.user.id);
+      setReports((current) => current.map((report) => report.id === reportId ? resolved : report));
+      setDataError('');
+    } catch {
+      setDataError('Only the report creator can resolve this report.');
+    }
+  }
+
   async function submitReport(event) {
     event.preventDefault();
     setSaving(true);
@@ -239,7 +364,7 @@ export default function App() {
       const report = await api.createReport({
         title: draft.title.trim(), category: draft.category, location: draft.location.trim(), description: draft.description.trim(),
         lat: draft.coords?.lat ?? CAMPUS_CENTER[0], lng: draft.coords?.lng ?? CAMPUS_CENTER[1],
-      });
+      }, session.user.id);
       setReports((current) => [report, ...current]);
       setView('open');
       setCategory('All');
@@ -254,12 +379,22 @@ export default function App() {
     }
   }
 
+  if (!authReady) {
+    return <div className="app-shell"><header className="topbar"><a className="brand" href="#home" aria-label="Vigil home"><span className="brand-mark"><Shield size={20} strokeWidth={1.8} /></span><span>vigil</span><span className="brand-divider" /><span className="brand-campus">OHIO STATE</span></a></header><main className="auth-main"><p className="eyebrow">CONNECTING TO CAMPUS</p></main></div>;
+  }
+
+  if (!session?.user) {
+    return <AuthScreen mode={authMode} setMode={(nextMode) => { setAuthMode(nextMode); setAuthError(''); setAuthNotice(''); }} configured={Boolean(supabase)} loading={authLoading} error={authError} notice={authNotice} onSubmit={submitAuth} />;
+  }
+
   return (
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="#home" aria-label="Vigil home"><span className="brand-mark"><Shield size={20} strokeWidth={1.8} /></span><span>vigil</span><span className="brand-divider" /><span className="brand-campus">OHIO STATE</span></a>
         <div className="topbar-actions">
           <span className="campus-status"><span className="live-dot" />Columbus, Ohio</span>
+          <span className="user-email" title={session.user.email}>{session.user.email}</span>
+          <button className="header-action logout-button" type="button" onClick={logOut}><LogOut size={16} /><span>Log out</span></button>
           <button className={`header-action${panel === 'chat' ? ' active' : ''}`} type="button" aria-label="Open campus chat" title="Campus chat" onClick={() => setPanel(panel === 'chat' ? null : 'chat')}><MessageCircle size={17} /><span>Chat</span></button>
           <button className={`header-action${panel === 'alerts' ? ' active' : ''}`} type="button" aria-label="Open notifications" title="Notifications" onClick={() => setPanel(panel === 'alerts' ? null : 'alerts')}><Bell size={17} /><span>Alerts</span>{unreadCount > 0 && <i className="unread-count">{unreadCount}</i>}</button>
           <button className="primary-button header-report" type="button" onClick={startReport}><Plus size={16} />Report</button>
@@ -291,7 +426,7 @@ export default function App() {
             </div>
             {dataError && <p className="load-error" role="alert">{dataError}</p>}
             <div className="report-list" aria-live="polite">
-              {visibleReports.map((report) => <div id={`report-${report.id}`} key={report.id}><ReportCard report={report} selected={selectedId === report.id} onSelect={chooseReport} /></div>)}
+              {visibleReports.map((report) => <div id={`report-${report.id}`} key={report.id}><ReportCard report={report} selected={selectedId === report.id} onSelect={chooseReport} canResolve={report.userId === session.user.id} onResolve={resolveReport} /></div>)}
               {visibleReports.length === 0 && <div className="empty-reports"><Shield size={21} /><p>{reports.length ? 'No reports in this view.' : 'Loading campus reports…'}</p></div>}
             </div>
             <div className="feed-footer"><CircleAlert size={14} /><span>In an emergency, call <strong>911</strong></span></div>

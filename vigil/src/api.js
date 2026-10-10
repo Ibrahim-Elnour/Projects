@@ -1,8 +1,7 @@
-import { seedMessages, seedNotifications, seedReports } from './data.js';
+import { seedMessages, seedNotifications } from './data.js';
+import { supabase } from './supabase.js';
 
-const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
 const STORAGE_KEYS = {
-  reports: 'vigil.reports',
   messages: 'vigil.messages',
   notifications: 'vigil.notifications',
 };
@@ -19,47 +18,77 @@ function readLocal(key, fallback) {
 }
 
 function writeLocal(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    return value;
+  }
   return value;
 }
 
-async function request(path, options) {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-  });
-  if (!response.ok) throw new Error(`Vigil API error (${response.status})`);
-  return response.status === 204 ? null : response.json();
+function fromReportRow(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    description: row.description,
+    location: row.location_name,
+    lat: Number(row.latitude),
+    lng: Number(row.longitude),
+    status: row.status === 'active' ? 'open' : 'resolved',
+    createdAt: row.created_at,
+    userId: row.user_id,
+  };
 }
 
 export const api = {
   async getReports() {
-    return API_URL ? request('/api/reports') : readLocal(STORAGE_KEYS.reports, seedReports);
+    if (!supabase) throw new Error('Supabase is not configured');
+    const { data, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data.map(fromReportRow);
   },
-  async createReport(report) {
-    if (API_URL) return request('/api/reports', { method: 'POST', body: JSON.stringify(report) });
-    const reports = readLocal(STORAGE_KEYS.reports, seedReports);
-    const created = { ...report, id: crypto.randomUUID(), status: 'open', createdAt: new Date().toISOString() };
-    writeLocal(STORAGE_KEYS.reports, [created, ...reports]);
+  async createReport(report, userId) {
+    if (!supabase) throw new Error('Supabase is not configured');
+    const { data, error } = await supabase.from('reports').insert({
+      title: report.title,
+      category: report.category,
+      description: report.description,
+      location_name: report.location,
+      latitude: report.lat,
+      longitude: report.lng,
+      user_id: userId,
+    }).select().single();
+    if (error) throw error;
+    const created = fromReportRow(data);
     const notifications = readLocal(STORAGE_KEYS.notifications, seedNotifications);
     writeLocal(STORAGE_KEYS.notifications, [{ id: crypto.randomUUID(), title: 'New campus report', detail: `${created.title} · ${created.location}`, time: 'just now', read: false }, ...notifications]);
     return created;
   },
+  async resolveReport(reportId, userId) {
+    if (!supabase) throw new Error('Supabase is not configured');
+    const { data, error } = await supabase.from('reports')
+      .update({ status: 'resolved' })
+      .eq('id', reportId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return fromReportRow(data);
+  },
   async getMessages() {
-    return API_URL ? request('/api/chat/messages') : readLocal(STORAGE_KEYS.messages, seedMessages);
+    return readLocal(STORAGE_KEYS.messages, seedMessages);
   },
   async sendMessage(text) {
-    if (API_URL) return request('/api/chat/messages', { method: 'POST', body: JSON.stringify({ text }) });
     const messages = readLocal(STORAGE_KEYS.messages, seedMessages);
     const message = { id: crypto.randomUUID(), author: 'You', text, time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), mine: true };
     writeLocal(STORAGE_KEYS.messages, [...messages, message]);
     return message;
   },
   async getNotifications() {
-    return API_URL ? request('/api/notifications') : readLocal(STORAGE_KEYS.notifications, seedNotifications);
+    return readLocal(STORAGE_KEYS.notifications, seedNotifications);
   },
   async markNotificationsRead() {
-    if (API_URL) return request('/api/notifications/read', { method: 'POST' });
     const notifications = readLocal(STORAGE_KEYS.notifications, seedNotifications);
     return writeLocal(STORAGE_KEYS.notifications, notifications.map((notification) => ({ ...notification, read: true })));
   },
